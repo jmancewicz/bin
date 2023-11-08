@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""
+Checks to run before pushing to gitlab.
+"""
+
+import json
+import re
+import subprocess
+import datetime
+import argparse
+
+import readchar
+import toml
+from termcolor import colored
+from art import text2art
+from typing import Callable
+
+import os
+
+
+def get_git_log():
+    output = subprocess.check_output(['git', 'log', '--pretty=format:%h %d']).decode().split('\n')
+    pairs = []
+    for line in output:
+        if len(line) == 9:
+            continue
+        sha = line[:8]
+        branch = line[11:-1]
+
+        branch = branch.replace('HEAD -> ', '')
+        branch = re.sub(r'origin/\S+', '', branch).strip(" ")
+
+        branches = re.findall(r'(\S+)', branch)
+        if len(branches) > 1:
+            print("Error: multiple branches", line)
+            exit(1)
+
+        if len(branches) == 1:
+            pairs.append((sha, branches[0]))
+            if branches[0] == 'master':
+                break
+
+    return pairs
+
+
+def main():
+    pairs = get_git_log()
+
+    for sha, branch in reversed(pairs):
+        print(sha, branch)
+
+    parent_sha = None
+    parent_branch = None
+    for sha, branch in reversed(pairs):
+        if branch == 'master' or branch == 'main':
+            branch = f'origin/{branch}'
+
+        if parent_sha is not None:
+            command = f'git rebase --onto {parent_branch} {parent_sha} {branch}'
+            print(command)
+            os.system(command)
+        parent_sha = sha
+        parent_branch = branch
+
+if __name__ == '__main__':
+    main()

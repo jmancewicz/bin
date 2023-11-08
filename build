@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+
+import os.path
+import glob
+
+from subprocess import Popen, PIPE, STDOUT
+from termcolor import colored
+import re
+
+
+def main():
+    files = glob.glob("_compiler/gmake2/*/Makefile")
+    dirs = [os.path.dirname(f) for f in files]
+
+    for dir_name in dirs:
+        command = f"make --directory={dir_name} --stop config=release_x86_64"
+        # print(command)
+        p = Popen(command, stdout=PIPE, stderr=STDOUT, shell=True)
+
+        while True:
+            line = p.stdout.readline()
+            if not line:
+                break
+            line = line.decode()
+            if re.match(r'^\s+File .* line \d+.*', line):
+                print(colored(line, 'red'), end='')
+            elif re.match(r'.*[Ww]arning.*', line):
+                print(colored(line, 'yellow'), end='')
+            elif re.match(r'.*tools/packman/python.sh.*', line) or \
+                    re.match(r'^g\+\+.*', line) or \
+                    re.match(r'.*nvcc.*', line):
+                print(colored(line, 'green'), end='')
+            else:
+                print(line, end='')
+
+
+if __name__ == '__main__':
+    main()
