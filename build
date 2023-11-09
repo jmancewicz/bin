@@ -39,7 +39,7 @@ def main():
 
 def get_args():
     parser = argparse.ArgumentParser("Build all")
-    
+
 
     return parser.parse_args()
 
