@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import argparse
+import argcomplete
+
 import os.path
 import glob
 
@@ -32,6 +35,13 @@ def main():
                 print(colored(line, 'green'), end='')
             else:
                 print(line, end='')
+
+
+def get_args():
+    parser = argparse.ArgumentParser("Build all")
+    
+
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
